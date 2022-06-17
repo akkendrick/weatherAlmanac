@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import time
 import datetime
 from sendMessage import send_message
 import os
@@ -11,12 +10,12 @@ load_dotenv()
 
 # Load alert email address and weather data
 alertEmail = os.environ.get("ALERT_EMAIL")
-inputData=pd.read_table("raw_laarc_24_194001010000.txt",delim_whitespace=True,  skiprows=6)
-df=DataFrame(inputData)
+inputData = pd.read_table("raw_laarc_24_194001010000.txt",delim_whitespace=True,  skiprows=6)
+df = DataFrame(inputData)
 
 # Process data to clear out rows of all nans
-df=df.replace('*',np.nan)
-df2=df.dropna(thresh=8)
+df = df.replace('*',np.nan)
+df2 = df.dropna(thresh=8)
 
 # Determine day of year for weather calculation
 day_of_year = datetime.datetime.now().timetuple().tm_yday
@@ -73,13 +72,13 @@ else:
 subject = 'Weather Almanac for today'
 to = alertEmail
 body = "On this day in history:\n"\
-        "-------------------------------------\n"\
+        "-----------------------------------------------------------------\n"\
         "The mean temperature is: " + str(meanTemp) + "F \n"\
         "The max temperature was: " + str(maxTempF) + "F during " + str(yearTempMax)+"\n"\
         "The min temperature was: " + str(minTempF) + "F during " + str(yearTempMin)+"\n"\
-        "-------------------------------------\n"\
-        "The max rainfall was: " + str(maxRain)+ "in during " + str(yearRainMax)+"\n"\
-        "-------------------------------------\n"\
+        "-----------------------------------------------------------------\n"\
+        "The max rainfall was: " + str(maxRain) + "in during " + str(yearRainMax)+"\n"\
+        "-----------------------------------------------------------------\n"\
         "The max snowfall was: " + str(maxSnow) + "in during " + str(yearSnowMax)+"\n"
 
 send_message(subject,body,to)
