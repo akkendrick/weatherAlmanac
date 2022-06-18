@@ -8,10 +8,15 @@ from pandas import DataFrame
 
 load_dotenv()
 
+
 # Load alert email address and weather data
+localDir = os.environ.get("LOCAL_DIR")
 alertEmail = os.environ.get("ALERT_EMAIL")
+os.chdir(localDir)
+
 inputData = pd.read_table("raw_laarc_24_194001010000.txt",delim_whitespace=True,  skiprows=6)
 df = DataFrame(inputData)
+
 
 # Process data to clear out rows of all nans
 df = df.replace('*',np.nan)
@@ -29,8 +34,8 @@ dayTempNums = pd.to_numeric(dayTemp)
 tempConvFunc = lambda x:  x*9/5+32
 convTemp = tempConvFunc(dayTempNums)
 meanTemp = round(np.nanmean(convTemp),1)
-maxTempF = round(np.nanmax(convTemp),2)
-minTempF = np.nanmin(convTemp)
+maxTempF = round(np.nanmax(convTemp),1)
+minTempF = round(np.nanmin(convTemp),1)
 
 # Identify years corresponding to min/max temp
 maxIndex = (np.argmin(abs(convTemp-maxTempF)))
