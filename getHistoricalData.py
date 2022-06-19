@@ -5,9 +5,13 @@ from sendMessage import send_message
 import os
 from dotenv import load_dotenv
 from pandas import DataFrame
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 load_dotenv()
 
+def optFunction(x,a,b,c,d):
+    return x**3*a+x**2*b+x*c+d
 
 # Load alert email address and weather data
 localDir = os.environ.get("LOCAL_DIR")
@@ -36,6 +40,24 @@ convTemp = tempConvFunc(dayTempNums)
 meanTemp = round(np.nanmean(convTemp),1)
 maxTempF = round(np.nanmax(convTemp),1)
 minTempF = round(np.nanmin(convTemp),1)
+
+# Plot the temperature data
+x=yearTemp
+y=convTemp
+fit, _ =curve_fit(optFunction,yearTemp,convTemp)
+a,b,c,d=fit
+# define a sequence of inputs between the smallest and largest known inputs
+x_line = np.arange(min(x), max(x), 1)
+# calculate the output for the range
+y_line = optFunction(x_line, a, b,c,d)
+# create a line plot for the mappi
+
+plt.scatter(yearTemp,convTemp)
+plt.plot(x_line,y_line,'--',color='red')
+plt.title("Past temperature for today's date")
+plt.xlabel("Year")
+plt.ylabel("Temperature (F)")
+plt.savefig('todayTemp.png')
 
 # Identify years corresponding to min/max temp
 maxIndex = (np.argmin(abs(convTemp-maxTempF)))
@@ -76,15 +98,16 @@ else:
 # Now send the data in an email
 subject = 'Weather Almanac for today'
 to = alertEmail
-body = "On this day in history:\n"\
-        "-----------------------------------------------------------------\n"\
-        "The mean temperature is: " + str(meanTemp) + "F \n"\
-        "The max temperature was: " + str(maxTempF) + "F during " + str(yearTempMax)+"\n"\
-        "The min temperature was: " + str(minTempF) + "F during " + str(yearTempMin)+"\n"\
-        "-----------------------------------------------------------------\n"\
-        "The max rainfall was: " + str(maxRain) + "in during " + str(yearRainMax)+"\n"\
-        "-----------------------------------------------------------------\n"\
-        "The max snowfall was: " + str(maxSnow) + "in during " + str(yearSnowMax)+"\n"
+# Format in html
+body = "<strong> On this day in history:  </strong> <br>"\
+        "<b> Temperature </b> <br>"\
+        "The mean temperature is: " + str(meanTemp) + "F <br>"\
+        "The max temperature was: " + str(maxTempF) + "F during " + str(yearTempMax)+"<br>"\
+        "The min temperature was: " + str(minTempF) + "F during " + str(yearTempMin)+"<br>"\
+        "<b> Rain </b> <br>"\
+        "The max rainfall was: " + str(maxRain) + "in during " + str(yearRainMax)+"<br>"\
+        "<b> Snow </b> <br>"\
+        "The max snowfall was: " + str(maxSnow) + "in during " + str(yearSnowMax)+"<br>"
 
 send_message(subject,body,to)
 
