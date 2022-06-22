@@ -66,6 +66,14 @@ yearTempMax = yearTemp[maxIndex]
 minIndex = (np.argmin(abs(convTemp-minTempF)))
 yearTempMin = yearTemp[minIndex]
 
+# Look at before and after 1980 to see if it has gotten warmer
+compYear = np.argmin(abs(yearTemp - 1980))
+
+earlyMeanTemp = round(np.nanmean(convTemp[0:compYear]),1)
+lateMeanTemp = round(np.nanmean(convTemp[compYear:-1]),1)
+
+earlyMaxTemp = round(np.nanmax(convTemp[0:compYear]),1)
+lateMaxTemp = round(np.nanmax(convTemp[compYear:-1]),1)
 
 # Pull out range of rain data
 dayRain = np.array((df2.loc[(df2.ddd == day_of_year), 'in']))
@@ -79,6 +87,7 @@ stdRain = round(np.nanstd(dayRainNums),2)
 
 maxIndex = (np.argmin(abs(dayRainNums-maxRain)))
 yearRainMax = yearTemp[maxIndex]
+
 
 # Pull out range of snow data
 daySnow = np.array((df2.loc[(df2.ddd == day_of_year), 'in.1']))
@@ -100,10 +109,13 @@ subject = 'Weather Almanac for today'
 to = alertEmail
 # Format in html
 body = "<strong> On this day in history:  </strong> <br>"\
-        "<b> Temperature </b> <br>"\
+        "<b> Temperature </b> <br>" \
         "The mean temperature is: " + str(meanTemp) + "F <br>"\
         "The max temperature was: " + str(maxTempF) + "F during " + str(yearTempMax)+"<br>"\
         "The min temperature was: " + str(minTempF) + "F during " + str(yearTempMin)+"<br>"\
+        "<b> Separating temperature data above and below 1980 to see recent vs past local extremes: </b> <br>"\
+        "Before 1980 the mean and max temperature were: " + str(earlyMeanTemp)+"F " + str(earlyMaxTemp) + "F<br>"\
+        "After 1980 the mean and max temperature were: " + str(lateMeanTemp)+"F " + str(lateMaxTemp) + "F<br>"\
         "<b> Rain </b> <br>"\
         "The max rainfall was: " + str(maxRain) + "in during " + str(yearRainMax)+"<br>"\
         "<b> Snow </b> <br>"\
