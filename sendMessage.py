@@ -21,7 +21,7 @@ def send_message(subject, body, to):
     text = MIMEText('<img src="cid:image1">' + '<br>'+body, 'html')
     msg.attach(text)
 
-    image = MIMEImage(open('/home/akendrick/Dropbox/Personal/Arduino/weatherAlmanac/todayTemp.png', 'rb').read())
+    image = MIMEImage(open('/home/akendrick/Documents/weatherAlmanac/todayTemp.png', 'rb').read())
 
     # Define the image's ID as referenced in the HTML body above
     image.add_header('Content-ID', '<image1>')
