@@ -1,17 +1,34 @@
 import pandas as pd
 import numpy as np
 import datetime
+import identifyClouds
 from sendMessage import send_message
 import os
 from dotenv import load_dotenv
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import sqlite3
+from sqlite3 import Error
+import identifyClouds
 
 load_dotenv()
 
 def optFunction(x,a,b,c,d):
     return x**3*a+x**2*b+x*c+d
+
+def connect_db():
+    """Set up the database for storing the data sent by mqtt"""
+    databasePath =  os.environ.get("SQL_PATH")
+    databasePath = str(databasePath)+"/mqtt.sqlite"
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(databasePath)
+    except Error as e:
+        print(e)
+
+    return conn
 
 # Load alert email address and weather data
 localDir = os.environ.get("LOCAL_DIR")
@@ -104,6 +121,50 @@ else:
     maxIndex = (np.argmin(abs(daySnowNums-maxSnow)))
     yearSnowMax = yearTemp[maxIndex]
 
+####################################
+# Read yesterday's weather data to send
+#Retrive database path
+databasePath =  os.environ.get("SQL_PATH")
+databasePath = str(databasePath)+"/mqtt.sqlite"
+conn = connect_db()
+#print(conn)
+#select_all_tasks(conn)
+
+
+# Read sqlite query results into a pandas DataFrame
+weather_df = pd.read_sql_query("SELECT timedat, temperature, humidity, pressure, rain FROM weatherData order by id desc LIMIT 300", conn)
+#print(weather_df)
+weather_df['temperature'] = weather_df['temperature'].astype(float)
+weather_df['humidity'] = weather_df['humidity'].astype(float)
+weather_df['pressure'] = weather_df['pressure'].astype(float)
+weather_df['rain'] = weather_df['rain'].astype(float)
+weather_df['temperature'] = tempConvFunc(weather_df['temperature'])
+
+meanMeasTemp = round(weather_df['temperature'].mean(),2)
+maxMeasTemp = round(weather_df['temperature'].max(),2)
+minMeasTemp = round(weather_df['temperature'].min(),2)
+
+initRain = min(weather_df['rain'])
+calibRain = weather_df['rain']-initRain
+totalRain = round(sum(calibRain),2)
+
+print(weather_df)
+print('Collected weather data:')
+print('Mean measured temperature (F): '+str(meanMeasTemp))
+print('Total measured rainfall (in): '+str(totalRain))
+####################################
+
+# Run ML code
+hostFile = identifyClouds.loadTimeStamp()
+print(hostFile)
+
+model, class_names = identifyClouds.trainModel()
+classID = identifyClouds.identifyClouds(hostFile, model, class_names)
+print(classID)
+
+#####################################
+
+
 # Now send the data in an email
 subject = 'Weather Almanac for today'
 to = alertEmail
@@ -114,12 +175,27 @@ body = "<strong> On this day in history:  </strong> <br>"\
         "The max temperature was: " + str(maxTempF) + "F during " + str(yearTempMax)+"<br>"\
         "The min temperature was: " + str(minTempF) + "F during " + str(yearTempMin)+"<br>"\
         "<b> Separating temperature data above and below 1980 to see recent vs past local extremes: </b> <br>"\
-        "Before 1980 the mean and max temperature were: " + str(earlyMeanTemp)+"F " + str(earlyMaxTemp) + "F<br>"\
-        "After 1980 the mean and max temperature were: " + str(lateMeanTemp)+"F " + str(lateMaxTemp) + "F<br>"\
+        "<br>"\
+        "Before 1980 the mean and max temperature were: " + str(earlyMeanTemp)+"F and " + str(earlyMaxTemp) + "F<br>"\
+        "After 1980 the mean and max temperature were: " + str(lateMeanTemp)+"F and " + str(lateMaxTemp) + "F<br>"\
+        "<br>"\
         "<b> Rain </b> <br>"\
         "The max rainfall was: " + str(maxRain) + "in during " + str(yearRainMax)+"<br>"\
+        "<br>"\
         "<b> Snow </b> <br>"\
-        "The max snowfall was: " + str(maxSnow) + "in during " + str(yearSnowMax)+"<br>"
+        "The  snowfall was: " + str(maxSnow) + "in during " + str(yearSnowMax)+"<br>"\
+        "<br>"\
+        "<strong> Here is what actually happened yesterday:  </strong> <br>"\
+        "The mean temperature was: " + str(meanMeasTemp) + "F <br>"\
+        "The max temperature was: " + str(maxMeasTemp) + "F" +"<br>"\
+        "The min temperature was: " + str(minMeasTemp) + "F" +"<br>"\
+        "The rainfall was: " + str(totalRain)+"<br>"\
+        "It was "+classID+" yesterday."
 
 send_message(subject,body,to)
+
+
+
+
+
 
