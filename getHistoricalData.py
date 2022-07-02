@@ -33,6 +33,7 @@ def connect_db():
 # Load alert email address and weather data
 localDir = os.environ.get("LOCAL_DIR")
 alertEmail = os.environ.get("ALERT_EMAIL")
+alertEmail2 = os.environ.get("ALERT_EMAIL2")
 os.chdir(localDir)
 
 inputData = pd.read_table("raw_laarc_24_194001010000.txt",delim_whitespace=True,  skiprows=6)
@@ -83,7 +84,7 @@ yearTempMax = yearTemp[maxIndex]
 minIndex = (np.argmin(abs(convTemp-minTempF)))
 yearTempMin = yearTemp[minIndex]
 
-# Look at before and after 1980 to see if it has gotten warmer
+# Look at before and after 1980 to see if it has changed
 compYear = np.argmin(abs(yearTemp - 1980))
 
 earlyMeanTemp = round(np.nanmean(convTemp[0:compYear]),1)
@@ -146,7 +147,8 @@ minMeasTemp = round(weather_df['temperature'].min(),2)
 
 initRain = min(weather_df['rain'])
 calibRain = weather_df['rain']-initRain
-totalRain = round(sum(calibRain),2)
+rainLen = calibRain.size
+totalRain = calibRain[rainLen-1]
 
 print(weather_df)
 print('Collected weather data:')
@@ -168,14 +170,15 @@ print(classID)
 # Now send the data in an email
 subject = 'Weather Almanac for today'
 to = alertEmail
+to2 = alertEmail2
 # Format in html
 body = "<strong> On this day in history:  </strong> <br>"\
         "<b> Temperature </b> <br>" \
         "The mean temperature is: " + str(meanTemp) + "F <br>"\
         "The max temperature was: " + str(maxTempF) + "F during " + str(yearTempMax)+"<br>"\
         "The min temperature was: " + str(minTempF) + "F during " + str(yearTempMin)+"<br>"\
-        "<b> Separating temperature data above and below 1980 to see recent vs past local extremes: </b> <br>"\
         "<br>"\
+        "<b> Separating temperature data above and below 1980 to see recent vs past local extremes: </b> <br>"\
         "Before 1980 the mean and max temperature were: " + str(earlyMeanTemp)+"F and " + str(earlyMaxTemp) + "F<br>"\
         "After 1980 the mean and max temperature were: " + str(lateMeanTemp)+"F and " + str(lateMaxTemp) + "F<br>"\
         "<br>"\
@@ -189,10 +192,11 @@ body = "<strong> On this day in history:  </strong> <br>"\
         "The mean temperature was: " + str(meanMeasTemp) + "F <br>"\
         "The max temperature was: " + str(maxMeasTemp) + "F" +"<br>"\
         "The min temperature was: " + str(minMeasTemp) + "F" +"<br>"\
-        "The rainfall was: " + str(totalRain)+"<br>"\
+        "The rainfall was: " + str(totalRain)+"in <br>"\
         "It was "+classID+" yesterday."
 
 send_message(subject,body,to)
+send_message(subject,body,to2)
 
 
 

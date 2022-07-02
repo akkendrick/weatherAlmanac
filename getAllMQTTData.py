@@ -91,6 +91,7 @@ def process_request(msg):
     elif msg.topic == 'outdoor/weather/distance':
         distOut.set(msg.payload)
     elif msg.topic == 'outdoor/weather/rain':
+        rainOut.set(msg.payload)
         sqlToPublish[5] = str(goodMsg)
     elif msg.topic == 'outdoor/weather/wind':
         windOut.set(msg.payload)
